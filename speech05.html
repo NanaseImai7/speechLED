@@ -1,0 +1,192 @@
+<html>
+  <meta charset="UTF-8" />
+  <script src="https://obniz.com/js/jquery-3.2.1.min.js"></script>
+  <script src="https://unpkg.com/obniz/obniz.js"></script>
+
+  <head>
+    <meta charset="utf-8" />
+    <title>オウム返し</title>
+  </head>
+  <style>
+    .center-box {
+      text-align: center;
+    }
+    .large-text {
+      font-size: 4rem;
+    }
+  </style>
+  <body>
+    <p class="center-box"><img id="mic" src="micoff.svg" /></p>
+    <div id="result-div" class="large-text"></div>
+    <button id="red">red</button>
+    <button id="green">green</button>
+
+    <script>
+      let leds;
+      const obniz = new Obniz("4005-7096"); // your obniz id
+      const LED_length = 15;
+      let ledlist = [...Array(LED_length)].map(() => [0, 0, 0]);
+
+      let btnRed = document.querySelector("#red");
+      btnRed.addEventListener("click", function () {
+        console.log("Red clicked");
+        ledon([0x33, 0x00, 0x00]);
+      });
+
+      let btnGreen = document.querySelector("#green");
+      btnGreen.addEventListener("click", function () {
+        console.log("Green clicked");
+        ledon([0x00, 0x33, 0x00]);
+      });
+
+      obniz.onconnect = async function () {
+        leds = obniz.wired("WS2812", { din: 26 }); // for M5 Atom lite
+        console.log("ok");
+        obniz.onloop = async function () {};
+
+        function ledon(color) {
+          let ledlist = [];
+          for (let i = 0; i < LED_length; i++) {
+            ledlist.push(color);
+          }
+          leds.rgbs(ledlist);
+        }
+
+        function ledon_2(color, color_2) {
+          let ledlist = [];
+          for (let i = 0; i < LED_length; i++) {
+            if (i % 2 == 0) {
+              ledlist.push(color);
+            } else {
+              ledlist.push(color_2);
+            }
+          }
+          leds.rgbs(ledlist);
+        }
+
+        function ledon_3(color, color_2, color_3) {
+          let ledlist = [];
+          for (let i = 0; i < LED_length; i++) {
+            if (i % 3 == 0) {
+              ledlist.push(color);
+            } else if (i % 3 == 1) {
+              ledlist.push(color_2);
+            } else {
+              ledlist.push(color_3);
+            }
+          }
+          leds.rgbs(ledlist);
+        }
+
+        function ledon_4(color, color_2, color_3, color_4) {
+          let ledlist = [];
+          for (let i = 0; i < LED_length; i++) {
+            if (i % 6 == 0) {
+              ledlist.push(color);
+            } else if (i % 6 == 2) {
+              ledlist.push(color_2);
+            } else if (i % 6 == 4) {
+              ledlist.push(color_3);
+            } else {
+              ledlist.push(color_4);
+            }
+          }
+          leds.rgbs(ledlist);
+        }
+
+        function shift(color) {
+          ledlist.shift();
+          ledlist.push(color);
+          leds.hsvs(ledlist);
+        }
+
+        ///
+
+        const resultDiv = document.querySelector("#result-div");
+        const micDiv = document.querySelector("#mic");
+        let speakingtime = 0;
+
+        // 音声認識機能(Chrome)
+        let rec = new webkitSpeechRecognition();
+        let stopped = true;
+        rec.continuous = true;
+        rec.interimResults = false;
+        rec.lang = "ja-JP";
+
+        micDiv.onclick = function () {
+          if (stopped == true) {
+            stopped = false;
+            resultDiv.innerHTML = "";
+            rec.start();
+          } else {
+            stopped = true;
+            rec.stop();
+          }
+        };
+
+        rec.onstart = function () {
+          console.log("on start");
+          micDiv.setAttribute("src", "micon.svg");
+          speakingtime = 0;
+        };
+
+        rec.onend = function () {
+          console.log("on end");
+          micDiv.setAttribute("src", "micoff.svg");
+          if (stopped == false) {
+            setTimeout(function () {
+              rec.start();
+            }, speakingtime);
+          }
+        };
+
+        rec.onresult = function (e) {
+          rec.stop();
+          for (let i = e.resultIndex; i < e.results.length; i++) {
+            if (e.results[i].isFinal) {
+              console.log(e);
+              let text = e.results[i][0].transcript;
+              resultDiv.innerHTML = text;
+              text = dialogue(text);
+              console.log(text);
+              speakingtime = text.length * 200;
+              console.log("estimate:", speakingtime, "ms");
+              speak(text);
+            }
+          }
+        };
+
+        function dialogue(input) {
+          if (/スタート/.test(input)) {
+            ledon([0x00, 0x33, 0x00]);
+          } else if (/赤/.test(input)) {
+            ledon([0x33, 0x00, 0x00]);
+          } else {
+            return "よくわかりません";
+          }
+        }
+
+        // 発話機能をインスタンス化
+        let msg = new SpeechSynthesisUtterance();
+
+        function speak(text) {
+          msg.volume = 1.0; // 音量 min 0 ~ max 1
+          msg.rate = 1.0; // 速度 min 0 ~ max 10
+          msg.pitch = 1.0; // 音程 min 0 ~ max 2
+
+          msg.text = text; // 喋る内容
+          msg.lang = "ja-JP"; // en-US or ja-JP
+          //msg.lang = "en-US"; // en-US or ja-JP
+
+          // 発話実行
+          speechSynthesis.speak(msg);
+        }
+
+        // 終了時の処理
+        msg.onend = function (event) {
+          console.log("喋った時間：" + event.elapsedTime + "ms");
+        };
+      };
+    </script>
+  </body>
+</html>

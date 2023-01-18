@@ -1,0 +1,124 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>オウム返し</title>
+  </head>
+  <style>
+    .center-box {
+      text-align: center;
+    }
+    .large-text {
+      font-size: 4rem;
+    }
+  </style>
+  <body>
+    <p class="center-box"><img id="mic" src="micoff.svg" /></p>
+    <div id="result-div" class="large-text"></div>
+    <script>
+      const resultDiv = document.querySelector("#result-div");
+      const micDiv = document.querySelector("#mic");
+      let speakingtime = 0;
+
+      // 音声認識機能(Chrome)
+      let rec = new webkitSpeechRecognition();
+      let stopped = true;
+      rec.continuous = true;
+      rec.interimResults = false;
+      rec.lang = "ja-JP";
+
+      micDiv.onclick = function () {
+        if (stopped == true) {
+          stopped = false;
+          resultDiv.innerHTML = "";
+          rec.start();
+        } else {
+          stopped = true;
+          rec.stop();
+        }
+      };
+
+      rec.onstart = function () {
+        console.log("on start");
+        micDiv.setAttribute("src", "micon.svg");
+        speakingtime = 0;
+      };
+
+      rec.onend = function () {
+        console.log("on end");
+        micDiv.setAttribute("src", "micoff.svg");
+        if (stopped == false) {
+          setTimeout(function () {
+            rec.start();
+          }, speakingtime);
+        }
+      };
+
+      rec.onresult = function (e) {
+        rec.stop();
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+          if (e.results[i].isFinal) {
+            console.log(e);
+            let text = e.results[i][0].transcript;
+            resultDiv.innerHTML = text;
+            text = dialogue(text);
+            console.log(text);
+            speakingtime = text.length * 200;
+            console.log("estimate:", speakingtime, "ms");
+            speak(text);
+          }
+        }
+      };
+
+      function dialogue(input) {
+        if (/牡羊/.test(input)) {
+          return "ラッキーカラーは、やわらかい印象のライトベージュ。いつも元気な印象の牡羊座さんの、また違った魅力を引き出してくれるはず。秋に近づくと、運気はピークを迎えそう。健康運が曇りがちに。特に気管支系には注意が必要です。";
+        } else if (/牡牛/.test(input)) {
+          return "ラッキーカラーは、牡牛座さんの守護星でもある金星をイメージしたゴールド。恋愛運のさらなる上昇が期待できます。ワンポイント付きだとさらに吉。";
+        } else if (/双子/.test(input)) {
+          return "ラッキーカラーは、清潔感のあるオフホワイト。第一印象の好感度アップが期待でき、対人運も上がりそう。秋頃になると金運が落ち込みがちに。特に仕事絡みのお付き合いでお金が飛んでいってしまう予感。衝動買いにも注意が必要です。";
+        } else if (/蟹/.test(input)) {
+          return "ラッキーカラーは、蟹座さんの守護星である月をイメージしたムーンイエロー。秋頃になると社会運が上昇していく予感。内省を元に、転職や副業にチャレンジしてみるのもラッキーです。";
+        } else if (/獅子/.test(input)) {
+          return "ラッキーカラーは、神秘的な印象のバイオレット。お金を守る力を鍛えることがテーマになりそう。資産運用や、遠い未来のことに感じている老後資金問題などを考えてみるのもおすすめです。";
+        } else if (/乙女/.test(input)) {
+          return "ラッキーカラーは、大人っぽいルージュレッド。がんばりが評価されて希望部署への異動や、昇進につながる可能性も。真面目で繊細な乙女座さんは胃腸に不調を抱えやすいので注意が必要。";
+        } else if (/天秤/.test(input)) {
+          return "ラッキーカラーは、コミュニケーションの象徴である風をイメージしたグリーン。上半期で縁ができた人間関係を、より深めることがテーマになりそう。SNSを使って積極的にコミュニケーションをとり、相性の合う人とは会う機会を増やしてみて。";
+        } else if (/蠍座/.test(input)) {
+          return "ラッキーカラーは、蠍座さんの守護星である冥王星をイメージしたブラック。勉強運がゆっくり上昇していくため、気になっている資格などがあれば、情報収集を始めてみましょう。図書館や古書店に行くと、深い知識をつけられるような参考書に出合えるかも。";
+        } else if (/射手座/.test(input)) {
+          return "ラッキーカラーは、感情の象徴である水を現すペールブルー。下半期は、感情の波が激しくなってしまいそう。対人運も波乱の予感のため、周りの人に振り回されてしまう可能性も。特に秋に入るタイミングがピークです。理不尽な思いをしてしまったとしても、常に冷静を心がけて。";
+        } else if (/山羊座/.test(input)) {
+          return "ラッキーカラーは、心が軽くなるようなフレッシュオレンジ。夏から秋にかけて、パートナー・家庭運が上昇していきそうです。家族や親戚との付き合い方を見直したり、パートナーとの仲を深めたりするきっかけができるかも。普段気になっていたことや、うやむやになっていたことを話し合う機会を設けてみて。山登りやキャンプなど、非日常を感じられるような場所へ出かけると吉。";
+        } else if (/水瓶/.test(input)) {
+          return "ラッキーカラーは、地に足をつける土をイメージしたアッシュグレー。初夏に入ったタイミングあたりから、仕事運が一気に上がっていく予感。チャレンジしてみたいことは臆せず声に出していきましょう。特に、社外の人と積極的にコミュニケーションをとってみるとチャンスに恵まれそう。一方、金運の波が激しいので注意を。";
+        } else if (/魚座/.test(input)) {
+          return "ラッキーカラーは、愛の象徴である金星の力を借りられるピンク。恋愛運が絶好調。美容に関することとも縁があるため、最新のコスメやヘアスタイルを試してみると、さらに魅力がアップしそうな予感。ただし、夏は遊び目的で近づいてくる人に注意。秋頃から仲良くなった人が出会いを運んできてくれる可能性が。気になる人ができたら、積極的にデートに誘ってみて。";
+        } else {
+          return "すみません、もう一度言い直してください";
+        }
+      }
+
+      // 発話機能をインスタンス化
+      let msg = new SpeechSynthesisUtterance();
+
+      function speak(text) {
+        msg.volume = 1.0; // 音量 min 0 ~ max 1
+        msg.rate = 1.0; // 速度 min 0 ~ max 10
+        msg.pitch = 1.0; // 音程 min 0 ~ max 2
+
+        msg.text = text; // 喋る内容
+        msg.lang = "ja-JP"; // en-US or ja-JP
+        //msg.lang = "en-US"; // en-US or ja-JP
+
+        // 発話実行
+        speechSynthesis.speak(msg);
+      }
+
+      // 終了時の処理
+      msg.onend = function (event) {
+        console.log("喋った時間：" + event.elapsedTime + "ms");
+      };
+    </script>
+  </body>
+</html>

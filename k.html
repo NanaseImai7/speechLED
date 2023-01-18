@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>センサからの信号受信</title>
+    <script src="jquery-3.5.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.1.9/p5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.1.3/socket.io.js"></script>
+    <script src="https://unpkg.com/obniz/obniz.js"></script>
+  </head>
+
+  <style>
+    #weather {
+      margin-left: 10px;
+    }
+
+    #weather_mic {
+      border-radius: 50%;
+      justify-content: center;
+      align-items: center;
+      border: none;
+      width: 80px;
+      height: 80px;
+      background: #6fa1ff;
+      color: #fff;
+      text-decoration: none;
+      text-align: center;
+      margin: 10px 0;
+    }
+
+    .colorful span:nth-child(1) {
+      color: red;
+    }
+    .colorful span:nth-child(2) {
+      color: orange;
+    }
+    .colorful span:nth-child(3) {
+      color: yellow;
+    }
+    .colorful span:nth-child(4) {
+      color: yellowgreen;
+    }
+    .colorful span:nth-child(5) {
+      color: lightblue;
+    }
+    .colorful span:nth-child(6) {
+      color: blue;
+    }
+    .colorful span:nth-child(7) {
+      color: purple;
+    }
+  </style>
+
+  <body>
+    <div id="obniz-debug"></div>
+    <h1>スマホからのセンサ情報を受信</h1>
+    <div>
+      <div>あなたのID: <span id="myid"></span></div>
+      <div>
+        ルームID: <input id="room" type="text" size="10" value="room001" />
+      </div>
+      <button id="connect">ルームに入る</button>
+      <div>受信した情報はコンソールログで確認してください</div>
+      <h3>
+        スマホで<img src="image/fairy.png" alt="妖精" width="45" />を動かしてね
+      </h3>
+
+      <h3>
+        <button id="weather_mic"><strong>マイク</strong></button>
+        <span id="weather">ボタンを押して天気と言ってね</span>
+      </h3>
+    </div>
+
+    <script>
+      /////////////////////////////////////////////////////
+
+      let socket = io.connect();
+      let myid;
+
+      let leds;
+      let num;
+      let num_2;
+      let h = 0;
+      const obniz = new Obniz("4005-7096"); // your obniz id
+      const LED_length = 15;
+      let ledlist = [...Array(LED_length)].map(() => [0, 0, 0]);
+
+      let room = document.querySelector("#room").value;
+      let btn = document.querySelector("#connect");
+
+      let g = 0;
+      let b = 0;
+      let x = 200;
+      let y = 250;
+      let fairy;
+      let sun;
+      let moon;
+      let cloud;
+      let rainbow;
+      let star;
+      let rain;
+      let thunder;
+      let snow;
+
+      btn.addEventListener("click", function () {
+        socket.emit("join", room);
+        btn.remove();
+      });
+
+      socket.on("mylogin", function (data) {
+        myid = data;
+        document.querySelector("#myid").innerHTML = myid;
+        console.log("あなたのID: ", myid);
+      });
+
+      socket.on("sensor", function (data) {
+        //console.log(g);
+        g = data.g;
+        b = data.b;
+      });
+      function preload() {
+        fairy = loadImage("image/fairy.png");
+        sun = loadImage("image/sun.png");
+        moon = loadImage("image/moon.png");
+        cloud = loadImage("image/cloud.png");
+        rainbow = loadImage("image/rainbow.png");
+        star = loadImage("image/star.png");
+        rain = loadImage("image/rain.png");
+        thunder = loadImage("image/thunder.png");
+        snow = loadImage("image/snow.png");
+      }
+
+      function setup() {
+        createCanvas(500, 500);
+        background(240);
+      }
+
+      function draw() {
+        background(240);
+        x = x + 0.05 * parseFloat(g);
+        y = y + 0.05 * parseFloat(b);
+        image(sun, 0, 0);
+        image(moon, 0, 60);
+        image(cloud, 0, 120);
+        image(rainbow, 0, 180);
+        image(star, 0, 240);
+        image(rain, 0, 300);
+        image(thunder, 0, 360);
+        image(snow, 0, 420);
+        image(fairy, x, y, 50, 50);
+
+        if (y >= -50 && y < 35) {
+          num = 0;
+        } else if (y >= 35 && y < 95) {
+          num = 1;
+        } else if (y >= 95 && y < 155) {
+          num = 2;
+        } else if (y >= 155 && y < 215) {
+          num = 3;
+        } else if (y >= 215 && y < 275) {
+          num = 4;
+        } else if (y >= 275 && y < 335) {
+          num = 5;
+        } else if (y >= 335 && y < 395) {
+          num = 6;
+        } else if (y >= 395 && y < 480) {
+          num = 7;
+        } else {
+          num = 8;
+        }
+      }
+
+      obniz.onconnect = async function () {
+        leds = obniz.wired("WS2812", { din: 26 }); // for M5 Atom lite
+        console.log("ok");
+        obniz.onloop = async function () {
+          if (num == 0) {
+            ledon_2([0x33, 0x00, 0x00], [0x05, 0x00, 0x00]);
+          } else if (num == 1) {
+            ledon_2([0x05, 0x05, 0x00], [0x33, 0x33, 0x00]);
+          } else if (num == 2) {
+            ledon([0x10, 0x10, 0x10]);
+          } else if (num == 3) {
+            leds.rgbs([
+              [0x33, 0x00, 0x00],
+              [0x33, 0x10, 0x00],
+              [0x33, 0x33, 0x00],
+              [0x00, 0x33, 0x00],
+              [0x00, 0x33, 0x33],
+              [0x00, 0x00, 0x33],
+              [0x33, 0x00, 0x33],
+              [0x33, 0x00, 0x00],
+              [0x33, 0x10, 0x00],
+              [0x33, 0x33, 0x00],
+              [0x00, 0x33, 0x00],
+              [0x00, 0x33, 0x33],
+              [0x00, 0x00, 0x33],
+              [0x33, 0x00, 0x33],
+              [0x33, 0x33, 0x33]
+            ]);
+          } else if (num == 4) {
+            ledon_3([0x33, 0x10, 0x00], [0x33, 0x33, 0x00], [0x05, 0x05, 0x05]);
+          } else if (num == 5) {
+            ledon_3([0x00, 0x00, 0x33], [0x00, 0x33, 0x33], [0x33, 0x21, 0x00]);
+          } else if (num == 6) {
+            ledon_2([0x33, 0x33, 0x00], [0x05, 0x05, 0x05]);
+          } else if (num == 7) {
+            ledon_4(
+              [0x33, 0x33, 0x33],
+              [0x00, 0x33, 0x05],
+              [0x00, 0x21, 0x33],
+              [0x05, 0x05, 0x05]
+            );
+          } else {
+            ledon([0x00, 0x00, 0x00]);
+          }
+        };
+        // });
+      };
+
+      function ledon(color) {
+        let ledlist = [];
+        for (let i = 0; i < LED_length; i++) {
+          ledlist.push(color);
+        }
+        leds.rgbs(ledlist);
+      }
+
+      function ledon_2(color, color_2) {
+        let ledlist = [];
+        for (let i = 0; i < LED_length; i++) {
+          if (i % 2 == 0) {
+            ledlist.push(color);
+          } else {
+            ledlist.push(color_2);
+          }
+        }
+        leds.rgbs(ledlist);
+      }
+
+      function ledon_3(color, color_2, color_3) {
+        let ledlist = [];
+        for (let i = 0; i < LED_length; i++) {
+          if (i % 3 == 0) {
+            ledlist.push(color);
+          } else if (i % 3 == 1) {
+            ledlist.push(color_2);
+          } else {
+            ledlist.push(color_3);
+          }
+        }
+        leds.rgbs(ledlist);
+      }
+
+      function ledon_4(color, color_2, color_3, color_4) {
+        let ledlist = [];
+        for (let i = 0; i < LED_length; i++) {
+          if (i % 6 == 0) {
+            ledlist.push(color);
+          } else if (i % 6 == 2) {
+            ledlist.push(color_2);
+          } else if (i % 6 == 4) {
+            ledlist.push(color_3);
+          } else {
+            ledlist.push(color_4);
+          }
+        }
+        leds.rgbs(ledlist);
+      }
+
+      function shift(color) {
+        ledlist.shift();
+        ledlist.push(color);
+        leds.hsvs(ledlist);
+      }
+
+      //////////////////////////////////////////////////////////////////
+
+      const resultDiv = document.querySelector("#weather");
+      const micDiv = document.querySelector("#weather_mic");
+      let speakingtime = 0;
+
+      // 音声認識機能(Chrome)
+      let rec = new webkitSpeechRecognition();
+      let stopped = true;
+      rec.continuous = true;
+      rec.interimResults = false;
+      rec.lang = "ja-JP";
+
+      micDiv.onclick = function () {
+        if (stopped == true) {
+          stopped = false;
+          resultDiv.innerHTML = "";
+          rec.start();
+        } else {
+          stopped = true;
+          rec.stop();
+          $("#weather").html("ボタンを押して天気と言ってね");
+          $("#weather").css("color", "black");
+          $("#weather").show();
+        }
+      };
+
+      rec.onstart = function () {
+        console.log("on start");
+        micDiv.innerHTML = "<strong>止める</strong>";
+        speakingtime = 0;
+      };
+
+      rec.onend = function () {
+        console.log("on end");
+        micDiv.innerHTML = "<strong>マイク</strong>";
+        if (stopped == false) {
+          setTimeout(function () {
+            rec.start();
+          }, speakingtime);
+        }
+      };
+
+      rec.onresult = function (e) {
+        rec.stop();
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+          if (e.results[i].isFinal) {
+            console.log(e);
+            let text = e.results[i][0].transcript;
+            resultDiv.innerHTML = text;
+
+            if (/天気/.test(text) || /てんき/.test(text)) {
+              $("#weather").show();
+              if (num == 0) {
+                $("#weather").html("SUN");
+                $("#weather").css("color", "red");
+              } else if (num == 1) {
+                $("#weather").html("MOON");
+                $("#weather").css("color", "orange");
+              } else if (num == 2) {
+                $("#weather").html("CLOUD");
+                $("#weather").css("color", "lightblue");
+              } else if (num == 3) {
+                $("#weather").html(
+                  "<span class='colorful'><span>R</span><span>A</span><span>I</span><span>N</span><span>B</span><span>O</span><span>W</span></span>"
+                );
+              } else if (num == 4) {
+                $("#weather").html("STAR");
+                $("#weather").css("color", "gold");
+              } else if (num == 5) {
+                $("#weather").html("RAIN");
+                $("#weather").css("color", "blue");
+              } else if (num == 6) {
+                $("#weather").html("THUNDER");
+                $("#weather").css("color", "yellow");
+              } else if (num == 7) {
+                $("#weather").html("SNOW");
+                $("#weather").css("color", "gray");
+              } else {
+                $("#weather").html("unknown");
+                $("#weather").css("color", "black");
+              }
+            } else {
+              $("#weather").html("もう一度答えてね");
+              $("#weather").css("color", "black");
+            }
+
+            text = dialogue(text);
+            console.log(text);
+            speakingtime = text.length * 200;
+            console.log("estimate:", speakingtime, "ms");
+            speak(text);
+          }
+        }
+      };
+
+      function dialogue(input) {
+        if (/天気/.test(input) || /てんき/.test(input)) {
+          if (num == 0) {
+            return "晴れ";
+          } else if (num == 1) {
+            return "月";
+          } else if (num == 2) {
+            return "曇り";
+          } else if (num == 3) {
+            return "虹";
+          } else if (num == 4) {
+            return "星";
+          } else if (num == 5) {
+            return "雨";
+          } else if (num == 6) {
+            return "雷";
+          } else if (num == 7) {
+            return "雪";
+          } else {
+            return "わかりません";
+          }
+        } else {
+          return "もう一度答えてね";
+        }
+      }
+
+      // 発話機能をインスタンス化
+      let msg = new SpeechSynthesisUtterance();
+
+      function speak(text) {
+        msg.volume = 1.0; // 音量 min 0 ~ max 1
+        msg.rate = 1.0; // 速度 min 0 ~ max 10
+        msg.pitch = 1.0; // 音程 min 0 ~ max 2
+
+        msg.text = text; // 喋る内容
+        msg.lang = "ja-JP"; // en-US or ja-JP
+        //msg.lang = "en-US"; // en-US or ja-JP
+
+        // 発話実行
+        speechSynthesis.speak(msg);
+      }
+
+      // 終了時の処理
+      msg.onend = function (event) {
+        console.log("喋った時間：" + event.elapsedTime + "ms");
+      };
+    </script>
+  </body>
+</html>
